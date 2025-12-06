@@ -55,6 +55,10 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+      },
+      "extra": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://teelxokttmwlhumdiqwf.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZWx4b2t0dG13bGh1bWRpcXdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyMjUyMDQsImV4cCI6MjA3NzgwMTIwNH0.NLG8gznap93N-box_yOO8l2yD27XWHHysGX6EpjzI_M"
+      }
   }
 }

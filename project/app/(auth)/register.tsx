@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +17,8 @@ export default function RegisterScreen() {
   const [role, setRole] = useState<'client' | 'technician'>('client');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -48,20 +50,33 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
-    if (!validate()) return;
+    try {
+      if (!validate()) return;
 
-    setLoading(true);
-    const { error } = await signUp(email.trim(), password, fullName.trim(), role);
-    setLoading(false);
+      setLoading(true);
+      setAuthError(null);
+      setInfoMessage(null);
+      const { error, emailConfirmationSent } = await signUp(email.trim(), password, fullName.trim(), role);
+      setLoading(false);
 
-    if (error) {
-      Alert.alert('Error', error.message || 'No se pudo crear la cuenta');
-    } else {
-      Alert.alert(
-        'Cuenta creada',
-        'Tu cuenta ha sido creada exitosamente',
-        [{ text: 'OK', onPress: () => router.replace('/(tabs)/home') }]
-      );
+      if (error) {
+        console.error('Signup error:', error);
+        setAuthError(error.message || 'No se pudo crear la cuenta');
+        return;
+      }
+      if (emailConfirmationSent) {
+        // Navegar a pantalla de instrucciones y además mostrar mensaje local
+  // Usar push para permitir volver atrás si el usuario quiere cambiar datos
+  router.push(`/(auth)/check-email?email=${encodeURIComponent(email.trim())}` as any); // pasar email para reenviar si necesario
+      } else {
+        // Sesión inmediata (por configuración sin confirmación requerida)
+        setInfoMessage('Cuenta creada y sesión iniciada. Redirigiendo…');
+        setTimeout(() => router.replace('/(tabs)/home'), 1000);
+      }
+    } catch (e: any) {
+      console.error('Unhandled register error:', e);
+      setLoading(false);
+      setAuthError('Ocurrió un problema al crear tu cuenta. Inténtalo nuevamente.');
     }
   };
 
@@ -135,6 +150,9 @@ export default function RegisterScreen() {
             secureTextEntry
             error={errors.confirmPassword}
           />
+
+          {authError && <Text style={styles.authError}>{authError}</Text>}
+          {infoMessage && <Text style={styles.infoMessage}>{infoMessage}</Text>}
 
           <Button
             title="Crear Cuenta"
@@ -227,5 +245,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.primary,
     fontWeight: '600',
+  },
+  authError: {
+    marginTop: 4,
+    color: Colors.error,
+    fontSize: 14,
+  },
+  infoMessage: {
+    marginTop: 4,
+    color: Colors.primary,
+    fontSize: 14,
   },
 });

@@ -229,7 +229,50 @@ eas build --platform ios
 - [ ] Búsqueda por voz
 - [ ] Modo oscuro
 
-## 📄 Licencia
+## � Notas de Autenticación y Perfiles
+
+Para evitar el error `Database error saving new user` observado al registrar usuarios, se optó por **eliminar el trigger de creación automática de perfiles** y delegar la creación del perfil al código de la app mediante la función `ensureProfileForUser` en `AuthContext.tsx`.
+
+### Razón del cambio
+El trigger original intentaba insertar en `public.profiles` mientras Row Level Security estaba activo y la política de inserción requería `auth.uid() = id`. Durante la transacción de `auth.signUp`, ese contexto puede no existir (o no satisfacer la política), causando un 500 interno.
+
+### Flujo actual
+1. Usuario se registra (`auth.signUp`).
+2. Si la cuenta requiere confirmación por correo, no hay sesión todavía.
+3. Tras confirmar el email e iniciar sesión, el listener `onAuthStateChange` llama `ensureProfileForUser`.
+4. La función intenta leer el perfil; si no existe, lo inserta con los metadatos (`full_name`, `role`).
+
+### Migraciones involucradas
+- `20251116123000_profiles_policies_and_trigger.sql`: versión original con trigger.
+- `20251116140000_profiles_insert_trigger_policy.sql`: añadió una política adicional para inserción, pero el 500 persistió.
+- Nueva migración (pendiente de crear/aplicar) eliminará el trigger y función para simplificar el flujo (ver carpeta `supabase/migrations`).
+
+### Pasos para aplicar la solución
+1. Ejecutar las migraciones nuevas con `supabase db push` o copiando el SQL en el editor de Supabase.
+2. Verificar que ya no existe el trigger:
+   ```sql
+   select tgname from pg_trigger where tgname = 'on_auth_user_created';
+   ```
+   Debe devolver 0 filas.
+3. Probar nuevamente el registro; no debería aparecer el error 500.
+
+### Recomendaciones futuras
+- Si se desea restaurar creación automática sin 500, crear una política de inserción más permisiva (ej. `WITH CHECK (true)`) y validar los datos del lado del servidor.
+- Añadir test automatizado de signup (ver script `scripts/test-signup.mjs`).
+
+## 🧪 Scripts de Prueba
+
+Se añadió `scripts/test-signup.mjs` y el comando:
+```bash
+npm run signup:demo
+```
+Variables opcionales:
+```bash
+COUNT=3 ROLE=technician DOMAIN=midominio.com npm run signup:demo
+```
+Esto ayuda a verificar rápidamente el flujo de registro y correos de confirmación.
+
+## �📄 Licencia
 
 Este proyecto es privado y propiedad de OficiosYa.
 

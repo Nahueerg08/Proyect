@@ -9,18 +9,17 @@ import { Button } from '@/components/Button';
 export default function ProfileScreen() {
   const { user, profile, signOut } = useAuth();
 
-  const handleSignOut = () => {
-    Alert.alert('Cerrar Sesión', '¿Estás seguro que deseas salir?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Salir',
-        style: 'destructive',
-        onPress: async () => {
-          await signOut();
-          router.replace('/(auth)/welcome');
-        },
-      },
-    ]);
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      // Forzar navegación después de un pequeño delay para asegurar que el estado se limpie
+      setTimeout(() => {
+        router.replace('/');
+      }, 100);
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      Alert.alert('Error', 'No se pudo cerrar la sesión');
+    }
   };
 
   const MenuItem = ({

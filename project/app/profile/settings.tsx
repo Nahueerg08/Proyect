@@ -1,10 +1,12 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
 import { Colors } from '@/constants/Colors';
 import { ArrowLeft, ChevronRight } from 'lucide-react-native';
 
 export default function SettingsScreen() {
+  const { profile } = useAuth();
   const MenuItem = ({ title, onPress }: { title: string; onPress: () => void }) => (
     <TouchableOpacity style={styles.menuItem} onPress={onPress}>
       <Text style={styles.menuItemText}>{title}</Text>
@@ -23,6 +25,18 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView style={styles.scroll}>
+        {profile?.role === 'technician' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Perfil Profesional</Text>
+            <View style={styles.menu}>
+              <MenuItem
+                title="Redes Sociales"
+                onPress={() => router.push('/profile/social-links')}
+              />
+            </View>
+          </View>
+        )}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Información</Text>
           <View style={styles.menu}>

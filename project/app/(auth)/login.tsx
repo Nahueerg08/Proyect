@@ -14,6 +14,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const validate = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -38,13 +39,29 @@ export default function LoginScreen() {
     if (!validate()) return;
 
     setLoading(true);
-    const { error } = await signIn(email.trim(), password);
-    setLoading(false);
-
-    if (error) {
-      Alert.alert('Error', 'Email o contraseña incorrectos');
-    } else {
-      router.replace('/(tabs)/home');
+    setAuthError(null);
+    try {
+      const { error } = await signIn(email.trim(), password);
+      if (error) {
+        console.error('Login error:', error);
+        const raw = String(error.message || '').toLowerCase();
+        let message = 'No se pudo iniciar sesión. Intenta nuevamente.';
+        if (raw.includes('failed to fetch') || raw.includes('retryable')) {
+          message = 'Error de red: no se pudo conectar al servidor. Revisa tu conexión a internet.';
+        } else if (raw.includes('email') && raw.includes('confirm')) {
+          message = 'Email no verificado: confirma tu correo antes de iniciar sesión.';
+        } else if (raw.includes('invalid login credentials')) {
+          message = 'Email o contraseña incorrectos.';
+        }
+        setAuthError(message);
+      } else {
+        router.replace('/(tabs)/home');
+      }
+    } catch (e: any) {
+      console.error('Unexpected login error:', e);
+      setAuthError('Error inesperado. Intenta de nuevo.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -82,6 +99,10 @@ export default function LoginScreen() {
             secureTextEntry
             error={errors.password}
           />
+
+          {authError && (
+            <Text accessibilityRole="alert" style={styles.authError}>{authError}</Text>
+          )}
 
           <Button
             title="Iniciar Sesión"
@@ -148,5 +169,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.primary,
     fontWeight: '600',
+  },
+  authError: {
+    marginTop: 4,
+    marginBottom: 4,
+    color: Colors.error,
+    fontSize: 14,
   },
 });

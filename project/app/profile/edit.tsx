@@ -29,6 +29,7 @@ export default function EditProfileScreen() {
     return Object.keys(newErrors).length === 0;
   };
 
+
   const handleSave = async () => {
     if (!validate()) return;
 
@@ -91,9 +92,7 @@ export default function EditProfileScreen() {
             <Text style={styles.infoText}>
               Email: <Text style={styles.infoValue}>{profile?.email}</Text>
             </Text>
-            <Text style={styles.infoHelp}>
-              El email no se puede cambiar desde la app
-            </Text>
+            <Text style={styles.infoHelp}>El email no se puede cambiar desde la app</Text>
           </View>
         </View>
 
